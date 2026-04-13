@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GrillerOS — Propuesta de Plataforma de Gestión</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  :root {
+    --fire: #E07B2A;
+    --fire-dim: #A05520;
+    --fire-glow: #F4A24A;
+    --bg: #0C0B09;
+    --surface: #141210;
+    --surface2: #1C1916;
+    --surface3: #242018;
+    --border: rgba(224,123,42,0.18);
+    --border-soft: rgba(255,255,255,0.07);
+    --text: #F0EBE3;
+    --text-muted: #8A8070;
+    --text-dim: #5A5248;
+    --accent-teal: #2AADA0;
+    --accent-green: #5AAF6A;
+    --accent-red: #D04A3A;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { background: var(--bg); color: var(--text); font-family: 'Outfit', sans-serif; font-size: 15px; line-height: 1.6; overflow-x: hidden; }
+
+  /* NAV */
+  nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: rgba(12,11,9,0.92); backdrop-filter: blur(8px); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 2.5rem; height: 56px; flex-wrap: wrap; }
+  .nav-logo { font-family: 'Cormorant Garamond', serif; font-size: 1.3rem; font-weight: 600; color: var(--fire-glow); letter-spacing: 0.05em; }
+  .nav-logo span { color: var(--text-muted); font-weight: 300; }
+  .nav-links { display: flex; gap: 0.25rem; flex-wrap: wrap; }
+  .nav-links a { color: var(--text-muted); text-decoration: none; font-size: 0.78rem; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; padding: 6px 12px; border-radius: 4px; transition: all 0.2s; }
+  .nav-links a:hover { color: var(--fire-glow); background: rgba(224,123,42,0.08); }
+
+  /* SECTIONS */
+  section { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; padding: 100px 2.5rem 80px; max-width: 1100px; margin: 0 auto; }
+  section.full { max-width: 100%; padding: 100px 0 80px; }
+  .section-inner { max-width: 1100px; margin: 0 auto; padding: 0 2.5rem; }
+
+  /* HERO */
+  #hero { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; padding: 100px 2.5rem 80px; max-width: 1100px; margin: 0 auto; position: relative; }
+  .fire-line { width: 60px; height: 2px; background: var(--fire); margin-bottom: 2rem; }
+  .hero-eyebrow { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--fire); margin-bottom: 1.5rem; }
+  h1.hero-title { font-family: 'Cormorant Garamond', serif; font-size: clamp(2.5rem, 6vw, 5.5rem); font-weight: 300; line-height: 1.05; color: var(--text); margin-bottom: 1rem; }
+  h1.hero-title strong { font-weight: 700; color: var(--fire-glow); display: block; }
+  .hero-sub { font-size: 1.05rem; color: var(--text-muted); max-width: 560px; line-height: 1.8; margin-bottom: 3rem; font-weight: 300; }
+  .hero-pills { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 3.5rem; }
+  .pill { background: var(--surface2); border: 1px solid var(--border); border-radius: 20px; padding: 5px 14px; font-size: 0.75rem; font-weight: 500; color: var(--text-muted); letter-spacing: 0.04em; }
+  .pill.active { background: rgba(224,123,42,0.12); border-color: var(--fire); color: var(--fire-glow); }
+  .hero-stats { display: grid; grid-template-columns: repeat(3, auto); gap: 2rem; }
+  .hero-stat-num { font-family: 'Cormorant Garamond', serif; font-size: clamp(2rem, 4vw, 2.8rem); font-weight: 600; color: var(--fire-glow); line-height: 1; }
+  .hero-stat-label { font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.1em; margin-top: 4px; font-weight: 500; }
+  .bg-texture { position: fixed; top: 0; right: 0; width: 50%; height: 100vh; pointer-events: none; z-index: 0; background: radial-gradient(ellipse 60% 80% at 80% 20%, rgba(224,123,42,0.04) 0%, transparent 70%); }
+
+  /* SECTION HEADERS */
+  .section-tag { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--fire); margin-bottom: 1rem; display: flex; align-items: center; gap: 10px; }
+  .section-tag::before { content: ''; display: block; width: 24px; height: 1px; background: var(--fire); }
+  h2.section-title { font-family: 'Cormorant Garamond', serif; font-size: clamp(1.8rem, 3.5vw, 3rem); font-weight: 300; line-height: 1.15; margin-bottom: 1.2rem; }
+  h2.section-title strong { font-weight: 700; }
+  .section-desc { color: var(--text-muted); max-width: 600px; font-size: 0.95rem; line-height: 1.8; font-weight: 300; margin-bottom: 3rem; }
+
+  /* PROBLEMS */
+  .problem-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1px; background: var(--border-soft); border: 1px solid var(--border-soft); border-radius: 8px; overflow: hidden; }
+  .problem-card { background: var(--surface); padding: 2rem 1.5rem; }
+  .problem-icon { font-size: 1.4rem; margin-bottom: 1rem; }
+  .problem-card h3 { font-size: 0.85rem; font-weight: 600; color: var(--text); margin-bottom: 0.5rem; }
+  .problem-card p { font-size: 0.8rem; color: var(--text-dim); line-height: 1.7; font-weight: 300; }
+
+  /* MODULE CARDS */
+  .modules-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; }
+  .module-card { background: var(--surface); border: 1px solid var(--border-soft); border-radius: 8px; padding: 1.75rem; transition: all 0.3s; cursor: default; position: relative; overflow: hidden; }
+  .module-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: transparent; transition: background 0.3s; }
+  .module-card:hover { border-color: var(--border); transform: translateY(-2px); }
+  .module-card:hover::before { background: var(--fire); }
+  .module-card.featured::before { background: var(--fire); }
+  .mod-number { font-size: 0.65rem; font-weight: 600; letter-spacing: 0.15em; color: var(--fire-dim); text-transform: uppercase; margin-bottom: 1rem; }
+  .mod-icon { width: 36px; height: 36px; background: rgba(224,123,42,0.1); border-radius: 6px; display: flex; align-items: center; justify-content: center; margin-bottom: 1.25rem; font-size: 1rem; }
+  .module-card h3 { font-size: 1rem; font-weight: 600; color: var(--text); margin-bottom: 0.75rem; }
+  .module-card p { font-size: 0.8rem; color: var(--text-muted); line-height: 1.7; font-weight: 300; }
+  .mod-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 1.25rem; }
+  .mod-tag { background: var(--surface3); border-radius: 3px; padding: 3px 8px; font-size: 0.68rem; color: var(--text-dim); font-weight: 500; letter-spacing: 0.03em; }
+  .new-badge { position: absolute; top: 1.25rem; right: 1.25rem; background: rgba(42,173,160,0.12); border: 1px solid rgba(42,173,160,0.3); color: var(--accent-teal); font-size: 0.62rem; font-weight: 600; padding: 2px 8px; border-radius: 20px; letter-spacing: 0.08em; text-transform: uppercase; }
+
+  /* KPI SECTION */
+  .kpi-dashboard { background: var(--surface); border: 1px solid var(--border-soft); border-radius: 12px; overflow: hidden; }
+  .dash-header { background: var(--surface2); border-bottom: 1px solid var(--border-soft); padding: 1rem 1.5rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+  .dash-header h3 { font-size: 0.85rem; font-weight: 600; color: var(--text); }
+  .dash-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--fire); flex-shrink: 0; }
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1px; background: var(--border-soft); }
+  .kpi-card { background: var(--surface); padding: 1.25rem 1.5rem; }
+  .kpi-label { font-size: 0.7rem; font-weight: 500; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.5rem; }
+  .kpi-value { font-family: 'Cormorant Garamond', serif; font-size: 1.9rem; font-weight: 600; color: var(--text); line-height: 1; }
+  .kpi-delta { font-size: 0.72rem; font-weight: 500; margin-top: 0.3rem; }
+  .delta-up { color: var(--accent-green); }
+  .delta-down { color: var(--accent-red); }
+  .charts-row { display: grid; grid-template-columns: 2fr 1fr; gap: 1px; background: var(--border-soft); }
+  .chart-box { background: var(--surface); padding: 1.5rem; }
+  .chart-box h4 { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 1rem; }
+
+  /* MODULE DETAIL */
+  .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: start; }
+  .detail-features { display: flex; flex-direction: column; gap: 1.25rem; }
+  .feature-row { display: flex; gap: 1rem; align-items: flex-start; }
+  .feature-icon { width: 28px; height: 28px; background: rgba(224,123,42,0.1); border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; flex-shrink: 0; margin-top: 2px; }
+  .feature-row h4 { font-size: 0.88rem; font-weight: 600; color: var(--text); margin-bottom: 0.2rem; }
+  .feature-row p { font-size: 0.78rem; color: var(--text-muted); line-height: 1.6; font-weight: 300; }
+  .mock-panel { background: var(--surface); border: 1px solid var(--border-soft); border-radius: 10px; overflow: hidden; }
+  .panel-header { background: var(--surface2); border-bottom: 1px solid var(--border-soft); padding: 12px 16px; display: flex; align-items: center; gap: 8px; }
+  .panel-header span { font-size: 0.75rem; color: var(--text-muted); font-weight: 500; }
+  .panel-header .dot-red { width: 8px; height: 8px; border-radius: 50%; background: #D04A3A; }
+  .panel-header .dot-amber { width: 8px; height: 8px; border-radius: 50%; background: #E07B2A; }
+  .panel-header .dot-green { width: 8px; height: 8px; border-radius: 50%; background: #5AAF6A; }
+
+  /* TABLE */
+  .mini-table { width: 100%; font-size: 0.78rem; border-collapse: collapse; }
+  .mini-table th { color: var(--text-dim); font-weight: 500; text-align: left; padding: 8px 12px; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 1px solid var(--border-soft); }
+  .mini-table td { padding: 10px 12px; color: var(--text-muted); border-bottom: 1px solid rgba(255,255,255,0.03); }
+  .mini-table tr:last-child td { border-bottom: none; }
+  .badge { display: inline-block; border-radius: 3px; padding: 2px 7px; font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+  .badge-ok { background: rgba(90,175,106,0.1); color: var(--accent-green); }
+  .badge-warn { background: rgba(224,123,42,0.1); color: var(--fire); }
+  .badge-danger { background: rgba(208,74,58,0.12); color: var(--accent-red); }
+  .badge-pending { background: rgba(42,173,160,0.1); color: var(--accent-teal); }
+
+  /* INTEGRACIONES */
+  .int-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; }
+  .int-card { background: var(--surface); border: 1px solid var(--border-soft); border-radius: 8px; padding: 1.5rem; text-align: center; }
+  .int-logo { font-size: 1.8rem; margin-bottom: 0.75rem; }
+  .int-card h4 { font-size: 0.85rem; font-weight: 600; color: var(--text); margin-bottom: 0.3rem; }
+  .int-card p { font-size: 0.72rem; color: var(--text-dim); font-weight: 300; line-height: 1.5; }
+
+  /* ROADMAP */
+  .roadmap { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 2rem; position: relative; padding-top: 2rem; }
+  .roadmap::before { content: ''; position: absolute; top: 6px; left: 0; right: 0; height: 1px; background: var(--border-soft); }
+  .phase { position: relative; }
+  .phase-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--fire); border: 2px solid var(--bg); position: absolute; top: -2rem; left: 0; margin-top: 6px; }
+  .phase-dot.dim { background: var(--surface3); }
+  .phase-label { font-size: 0.65rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--fire); margin-bottom: 0.5rem; }
+  .phase-label.dim { color: var(--text-dim); }
+  .phase h4 { font-size: 0.85rem; font-weight: 600; color: var(--text); margin-bottom: 0.5rem; }
+  .phase ul { list-style: none; }
+  .phase ul li { font-size: 0.75rem; color: var(--text-dim); font-weight: 300; padding: 2px 0; }
+  .phase ul li::before { content: '— '; color: var(--fire-dim); }
+
+  /* FOOTER SLIDE */
+  #cierre { min-height: 60vh; display: flex; align-items: center; background: var(--surface); padding: 80px 2.5rem; }
+  .cierre-inner { max-width: 800px; margin: 0 auto; text-align: center; }
+  .cierre-inner h2 { font-family: 'Cormorant Garamond', serif; font-size: clamp(2rem, 5vw, 4rem); font-weight: 300; line-height: 1.1; margin-bottom: 1.5rem; }
+  .cierre-inner p { color: var(--text-muted); font-size: 1rem; font-weight: 300; line-height: 1.8; }
+
+  /* UTILS */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; }
+
+  /* ---- RESPONSIVE ---- */
+  @media (max-width: 768px) {
+    nav { height: auto; padding: 12px 1.2rem; gap: 8px; }
+    .nav-links { display: none; }
+    section { padding: 80px 1.2rem 60px; }
+    section.full { padding: 80px 0 60px; }
+    .section-inner { padding: 0 1.2rem; }
+    #hero { padding: 80px 1.2rem 60px; }
+    .hero-stats { grid-template-columns: repeat(2, auto); gap: 1.5rem; }
+    .detail-grid { grid-template-columns: 1fr; gap: 2rem; }
+    .two-col { grid-template-columns: 1fr; gap: 2rem; }
+    .charts-row { grid-template-columns: 1fr; }
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    .roadmap::before { display: none; }
+    .phase-dot { display: none; }
+    .phase { padding-top: 0; }
+    #cierre { padding: 60px 1.2rem; }
+  }
+  @media (max-width: 480px) {
+    .hero-stats { grid-template-columns: 1fr 1fr; }
+    .kpi-grid { grid-template-columns: 1fr 1fr; }
+    .modules-grid { grid-template-columns: 1fr; }
+    .problem-grid { grid-template-columns: 1fr; }
+    .int-grid { grid-template-columns: 1fr 1fr; }
+    h1.hero-title { font-size: 2.2rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="bg-texture"></div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">Griller<span>OS</span></div>
+  <div class="nav-links">
+    <a href="#modulos">Módulos</a>
+    <a href="#kpis">KPIs</a>
+    <a href="#tesoreria">Tesorería</a>
+    <a href="#roadmap">Roadmap</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div id="hero">
+  <div class="hero-eyebrow">Propuesta de Plataforma — Confidencial</div>
+  <div class="fire-line"></div>
+  <h1 class="hero-title">
+    Gestión inteligente<br>
+    <strong>para Griller</strong>
+  </h1>
+  <p class="hero-sub">Una plataforma centralizada que conecta proveedores, facturación, stock, gastos, tesorería y tu equipo — diseñada para operar a la velocidad de Griller.</p>
+  <div class="hero-pills">
+    <span class="pill active">Clover Integrado</span>
+    <span class="pill active">Multi-sucursal</span>
+    <span class="pill">Cariló</span>
+    <span class="pill">Canning</span>
+    <span class="pill">KPIs en tiempo real</span>
+    <span class="pill">Control de CMV</span>
+    <span class="pill">Flujo de Fondos</span>
+  </div>
+  <div class="hero-stats">
+    <div>
+      <div class="hero-stat-num">8+</div>
+      <div class="hero-stat-label">módulos integrados</div>
+    </div>
+    <div>
+      <div class="hero-stat-num">2</div>
+      <div class="hero-stat-label">sucursales unificadas</div>
+    </div>
+    <div>
+      <div class="hero-stat-num">3</div>
+      <div class="hero-stat-label">meses al aire</div>
+    </div>
+  </div>
+</div>
+
+<!-- PROBLEMA -->
+<section id="problema">
+  <div class="section-tag">El contexto</div>
+  <h2 class="section-title">El desafío de gestionar<br><strong>dos restaurantes premium</strong></h2>
+  <p class="section-desc">Con dos sucursales, un lounge bar y eventos privados, la información crítica vive en planillas aisladas, reportes manuales y sistemas que no hablan entre sí.</p>
+  <div class="problem-grid">
+    <div class="problem-card">
+      <div class="problem-icon">📊</div>
+      <h3>Datos dispersos</h3>
+      <p>Clover, planillas, WhatsApp y correos. No hay una vista consolidada del negocio en tiempo real.</p>
+    </div>
+    <div class="problem-card">
+      <div class="problem-icon">📦</div>
+      <h3>Stock sin trazabilidad</h3>
+      <p>Sin cruzar compras con ventas, el CMV real y el desperdicio son cifras aproximadas.</p>
+    </div>
+    <div class="problem-card">
+      <div class="problem-icon">🔁</div>
+      <h3>Proveedores fragmentados</h3>
+      <p>Precios que cambian, pedidos por WhatsApp, historial de órdenes sin registro unificado.</p>
+    </div>
+    <div class="problem-card">
+      <div class="problem-icon">💸</div>
+      <h3>Tesorería sin visibilidad</h3>
+      <p>Órdenes de pago sin flujo de aprobación. No hay proyección de caja unificada entre sucursales.</p>
+    </div>
+    <div class="problem-card">
+      <div class="problem-icon">📉</div>
+      <h3>KPIs reactivos</h3>
+      <p>Los números llegan tarde. Las decisiones se toman sobre datos del mes anterior.</p>
+    </div>
+    <div class="problem-card">
+      <div class="problem-icon">👥</div>
+      <h3>RRHH manual</h3>
+      <p>Turnos, liquidaciones y ausencias gestionadas sin visibilidad del costo de nómina en vivo.</p>
+    </div>
+  </div>
+</section>
+
+<!-- MÓDULOS -->
+<section id="modulos" class="full">
+  <div class="section-inner">
+    <div class="section-tag">La plataforma</div>
+    <h2 class="section-title">Todo el negocio,<br><strong>una sola pantalla</strong></h2>
+    <p class="section-desc">GrillerOS integra cada área operativa en módulos especializados, sincronizados en tiempo real entre Cariló y Canning.</p>
+    <div class="modules-grid">
+
+      <div class="module-card featured">
+        <div class="mod-number">01</div>
+        <div class="mod-icon">🏬</div>
+        <h3>Módulo de Proveedores</h3>
+        <p>Registro completo de pedidos, historial de precios, alertas de variaciones y stock actualizado por cada insumo.</p>
+        <div class="mod-tags">
+          <span class="mod-tag">Órdenes de compra</span>
+          <span class="mod-tag">Historial de precios</span>
+          <span class="mod-tag">Stock en tiempo real</span>
+          <span class="mod-tag">Alertas automáticas</span>
+        </div>
+      </div>
+
+      <div class="module-card featured">
+        <div class="mod-number">02</div>
+        <div class="mod-icon">💳</div>
+        <h3>Módulo de Facturación</h3>
+        <p>Sincronización con Clover. CMV automático, evolución de ventas, márgenes por categoría y ticket promedio.</p>
+        <div class="mod-tags">
+          <span class="mod-tag">Clover Sync</span>
+          <span class="mod-tag">CMV automático</span>
+          <span class="mod-tag">Márgenes</span>
+          <span class="mod-tag">Ticket promedio</span>
+        </div>
+      </div>
+
+      <div class="module-card featured">
+        <div class="mod-number">03</div>
+        <div class="mod-icon">📋</div>
+        <h3>Módulo de Gastos</h3>
+        <p>Carga y categorización de gastos operativos. Comparativa entre sucursales y evolución por período.</p>
+        <div class="mod-tags">
+          <span class="mod-tag">Categorías</span>
+          <span class="mod-tag">Multi-sucursal</span>
+          <span class="mod-tag">Evolución mensual</span>
+        </div>
+      </div>
+
+      <div class="module-card featured">
+        <div class="mod-number">04</div>
+        <div class="mod-icon">🏦</div>
+        <h3>Módulo de Tesorería</h3>
+        <p>Flujo de fondos consolidado, proyección de caja, registro de movimientos bancarios y gestión de órdenes de pago con circuito de aprobaciones.</p>
+        <div class="mod-tags">
+          <span class="mod-tag">Flujo de fondos</span>
+          <span class="mod-tag">Aprobaciones</span>
+          <span class="mod-tag">Proyección de caja</span>
+          <span class="mod-tag">Multi-sucursal</span>
+        </div>
+      </div>
+
+      <div class="module-card">
+        <span class="new-badge">Nuevo</span>
+        <div class="mod-number">05</div>
+        <div class="mod-icon">📦</div>
+        <h3>Inventario & Stock</h3>
+        <p>Control de stock por producto, recetas costeadas, mermas y alertas de reposición automática.</p>
+        <div class="mod-tags">
+          <span class="mod-tag">Recetas costeadas</span>
+          <span class="mod-tag">Mermas</span>
+          <span class="mod-tag">Reposición</span>
+        </div>
+      </div>
+
+      <div class="module-card">
+        <span class="new-badge">Nuevo</span>
+        <div class="mod-number">06</div>
+        <div class="mod-icon">👥</div>
+        <h3>Recursos Humanos</h3>
+        <p>Gestión de turnos, asistencia, liquidación simplificada y costo de nómina sobre facturación.</p>
+        <div class="mod-tags">
+          <span class="mod-tag">Turnos</span>
+          <span class="mod-tag">Asistencia</span>
+          <span class="mod-tag">Costo laboral %</span>
+        </div>
+      </div>
+
+      <div class="module-card">
+        <span class="new-badge">Nuevo</span>
+        <div class="mod-number">07</div>
+        <div class="mod-icon">🎉</div>
+        <h3>Eventos & Private Dining</h3>
+        <p>Pipeline de eventos privados, presupuestos, anticipos, checklist operativo y rentabilidad por evento.</p>
+        <div class="mod-tags">
+          <span class="mod-tag">Pipeline</span>
+          <span class="mod-tag">Presupuestos</span>
+          <span class="mod-tag">Rentabilidad</span>
+        </div>
+      </div>
+
+      <div class="module-card">
+        <span class="new-badge" style="background:rgba(224,123,42,0.1);border-color:rgba(224,123,42,0.3);color:var(--fire);">Pro</span>
+        <div class="mod-number">08</div>
+        <div class="mod-icon">📊</div>
+        <h3>Dashboard Ejecutivo</h3>
+        <p>Vista consolidada de todas las métricas clave. Comparativa Cariló vs Canning. Alertas inteligentes.</p>
+        <div class="mod-tags">
+          <span class="mod-tag">Multi-sucursal</span>
+          <span class="mod-tag">Alertas</span>
+          <span class="mod-tag">Exportar PDF</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- PROVEEDORES DETAIL -->
+<section id="proveedores">
+  <div class="section-tag">Módulo 01</div>
+  <h2 class="section-title">Proveedores &<br><strong>Compras</strong></h2>
+  <div class="detail-grid">
+    <div class="detail-features">
+      <div class="feature-row">
+        <div class="feature-icon">📝</div>
+        <div>
+          <h4>Órdenes de compra digitales</h4>
+          <p>Registrá cada pedido con proveedor, producto, cantidad, precio y fecha. Historial completo por categoría.</p>
+        </div>
+      </div>
+      <div class="feature-row">
+        <div class="feature-icon">📈</div>
+        <div>
+          <h4>Monitoreo de variaciones de precio</h4>
+          <p>Alerta automática cuando un proveedor aumenta un precio. Gráfico de evolución histórica por insumo.</p>
+        </div>
+      </div>
+      <div class="feature-row">
+        <div class="feature-icon">📦</div>
+        <div>
+          <h4>Stock en tiempo real</h4>
+          <p>Entradas por compras, salidas por ventas y producción. Balance de stock actualizado automáticamente.</p>
+        </div>
+      </div>
+      <div class="feature-row">
+        <div class="feature-icon">🔔</div>
+        <div>
+          <h4>Alertas de reposición</h4>
+          <p>Configurá stock mínimo por producto. El sistema avisa antes de quedarse sin insumos clave.</p>
+        </div>
+      </div>
+      <div class="feature-row">
+        <div class="feature-icon">⚖️</div>
+        <div>
+          <h4>Comparativa entre proveedores</h4>
+          <p>Tablero comparativo de precios por categoría de insumo para negociar con información.</p>
+        </div>
+      </div>
+    </div>
+    <div class="mock-panel">
+      <div class="panel-header">
+        <div class="dot-red"></div><div class="dot-amber"></div><div class="dot-green"></div>
+        <span>Proveedores — Últimos pedidos</span>
+      </div>
+      <div style="padding: 16px; overflow-x: auto;">
+        <table class="mini-table">
+          <thead>
+            <tr><th>Proveedor</th><th>Producto</th><th>Monto</th><th>Var.</th><th>Estado</th></tr>
+          </thead>
+          <tbody>
+            <tr><td style="color:var(--text)">La Cuadrada</td><td>Bife chorizo</td><td>$148.500</td><td class="delta-down">+12%</td><td><span class="badge badge-warn">En camino</span></td></tr>
+            <tr><td style="color:var(--text)">Salentein</td><td>Malbec x12</td><td>$87.200</td><td>—</td><td><span class="badge badge-ok">Recibido</span></td></tr>
+            <tr><td style="color:var(--text)">FEMSA</td><td>Stella x60</td><td>$64.800</td><td class="delta-down">+8%</td><td><span class="badge badge-ok">Recibido</span></td></tr>
+            <tr><td style="color:var(--text)">Costas SRL</td><td>Langostinos</td><td>$92.000</td><td class="delta-down">+22%</td><td><span class="badge badge-danger">Demorado</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="padding: 0 16px 16px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
+        <div style="background:var(--surface2);border-radius:6px;padding:12px;">
+          <div style="font-size:0.65rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Proveedores</div>
+          <div style="font-size:1.5rem;font-family:'Cormorant Garamond',serif;font-weight:600;color:var(--text)">14</div>
+        </div>
+        <div style="background:var(--surface2);border-radius:6px;padding:12px;">
+          <div style="font-size:0.65rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Compras mes</div>
+          <div style="font-size:1.5rem;font-family:'Cormorant Garamond',serif;font-weight:600;color:var(--text)">$2.4M</div>
+        </div>
+        <div style="background:rgba(208,74,58,0.08);border:1px solid rgba(208,74,58,0.2);border-radius:6px;padding:12px;">
+          <div style="font-size:0.65rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Alertas</div>
+          <div style="font-size:1.5rem;font-family:'Cormorant Garamond',serif;font-weight:600;color:var(--accent-red)">3</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FACTURACIÓN DETAIL -->
+<section id="facturacion">
+  <div class="section-tag">Módulo 02</div>
+  <h2 class="section-title">Facturación &<br><strong>Rentabilidad</strong></h2>
+  <div class="detail-grid">
+    <div class="mock-panel">
+      <div class="panel-header">
+        <div class="dot-red"></div><div class="dot-amber"></div><div class="dot-green"></div>
+        <span>Facturación — Resumen mensual</span>
+      </div>
+      <div style="padding: 16px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;">
+          <div style="background:var(--surface2);border-radius:6px;padding:12px;">
+            <div style="font-size:0.65rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Facturación total</div>
+            <div style="font-size:1.4rem;font-family:'Cormorant Garamond',serif;font-weight:600;color:var(--text)">$8.7M</div>
+            <div style="font-size:0.72rem;color:var(--accent-green);margin-top:2px">↑ 18% vs mes anterior</div>
+          </div>
+          <div style="background:var(--surface2);border-radius:6px;padding:12px;">
+            <div style="font-size:0.65rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">CMV</div>
+            <div style="font-size:1.4rem;font-family:'Cormorant Garamond',serif;font-weight:600;color:var(--text)">28.4%</div>
+            <div style="font-size:0.72rem;color:var(--accent-green);margin-top:2px">↓ 2.1% vs anterior</div>
+          </div>
+          <div style="background:var(--surface2);border-radius:6px;padding:12px;">
+            <div style="font-size:0.65rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Margen bruto</div>
+            <div style="font-size:1.4rem;font-family:'Cormorant Garamond',serif;font-weight:600;color:var(--text)">71.6%</div>
+            <div style="font-size:0.72rem;color:var(--accent-green);margin-top:2px">↑ Target alcanzado</div>
+          </div>
+          <div style="background:var(--surface2);border-radius:6px;padding:12px;">
+            <div style="font-size:0.65rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Ticket promedio</div>
+            <div style="font-size:1.4rem;font-family:'Cormorant Garamond',serif;font-weight:600;color:var(--text)">$24.800</div>
+            <div style="font-size:0.72rem;color:var(--accent-green);margin-top:2px">↑ $2.100 vs anterior</div>
+          </div>
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="mini-table">
+            <thead><tr><th>Categoría</th><th>Ventas</th><th>CMV%</th><th>Margen</th></tr></thead>
+            <tbody>
+              <tr><td style="color:var(--text)">Carnes</td><td>$3.9M</td><td>34.2%</td><td class="delta-up">65.8%</td></tr>
+              <tr><td style="color:var(--text)">Bebidas</td><td>$2.1M</td><td>18.5%</td><td class="delta-up">81.5%</td></tr>
+              <tr><td style="color:var(--text)">Mariscos</td><td>$1.4M</td><td>38.7%</td><td class="delta-up">61.3%</td></tr>
+              <tr><td style="color:var(--text)">Coctelería</td><td>$0.9M</td><td>12.4%</td><td class="delta-up">87.6%</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="detail-features">
+      <div class="feature-row">
+        <div class="feature-icon">🔗</div>
+        <div>
+          <h4>Sincronización con Clover</h4>
+          <p>Importación automática de transacciones. Sin doble carga. Los datos de cobro llegan solos.</p>
+        </div>
+      </div>
+      <div class="feature-row">
+        <div class="feature-icon">📊</div>
+        <div>
+          <h4>CMV calculado automáticamente</h4>
+          <p>Cruzando ventas con el costo de insumos registrado en compras. Sin Excel, sin estimaciones.</p>
+        </div>
+      </div>
+      <div class="feature-row">
+        <div class="feature-icon">📉</div>
+        <div>
+          <h4>Evolución de facturación</h4>
+          <p>Histórico mensual, semanal y diario. Comparativa Cariló vs Canning con tendencias claras.</p>
+        </div>
+      </div>
+      <div class="feature-row">
+        <div class="feature-icon">🍽️</div>
+        <div>
+          <h4>Márgenes por categoría</h4>
+          <p>Sabés exactamente qué platos son los más rentables y cuáles están destruyendo el margen.</p>
+        </div>
+      </div>
+      <div class="feature-row">
+        <div class="feature-icon">⭐</div>
+        <div>
+          <h4>Análisis ABC de productos</h4>
+          <p>Los 10 productos que generan el 80% de la facturación. Menú engineering simplificado.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TESORERÍA (NUEVO) -->
+<section id="tesoreria">
+  <div class="section-tag">Módulo 04 — Nuevo</div>
+  <h2 class="section-title">Tesorería &<br><strong>Flujo de Fondos</strong></h2>
+  <div class="detail-grid">
+    <div class="detail-features">
+      <div class="feature-row">
+        <div class="feature-icon">💰</div>
+        <div>
+          <h4>Flujo de fondos consolidado</h4>
+          <p>Ingresos y egresos de ambas sucursales en una vista unificada. Saldo disponible en tiempo real por cuenta bancaria.</p>
+        </div>
+      </div>
+      <div class="feature-row">
+        <div class="feature-icon">📤</div>
+        <div>
+          <h4>Órdenes de pago con aprobaciones</h4>
+          <p>Circuito configurable: quien genera la OP, quien la aprueba, quien la ejecuta. Historial de aprobaciones auditado.</p>
+        </div>
+      </div>
+      <div class="feature-row">
+        <div class="feature-icon">📅</div>
+        <div>
+          <h4>Proyección de caja</h4>
+          <p>Estimación de caja a 7, 15 y 30 días basada en compromisos de pago programados y proyección de ventas.</p>
+        </div>
+      </div>
+      <div class="feature-row">
+        <div class="feature-icon">🏦</div>
+        <div>
+          <h4>Conciliación bancaria</h4>
+          <p>Carga de extractos bancarios y conciliación contra los movimientos registrados. Detección de diferencias automática.</p>
+        </div>
+      </div>
+      <div class="feature-row">
+        <div class="feature-icon">📊</div>
+        <div>
+          <h4>Posición financiera diaria</h4>
+          <p>Dashboard de posición neta: cuánto entra, cuánto sale, qué está pendiente de aprobación y cuál es la posición proyectada.</p>
+        </div>
+      </div>
+    </div>
+    <div class="mock-panel">
+      <div class="panel-header">
+        <div class="dot-red"></div><div class="dot-amber"></div><div class="dot-green"></div>
+        <span>Tesorería — Órdenes de pago</span>
+      </div>
+      <div style="padding: 16px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;">
+          <div style="background:var(--surface2);border-radius:6px;padding:12px;">
+            <div style="font-size:0.65rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Saldo disponible</div>
+            <div style="font-size:1.4rem;font-family:'Cormorant Garamond',serif;font-weight:600;color:var(--text)">$4.2M</div>
+            <div style="font-size:0.72rem;color:var(--text-dim);margin-top:2px">Cariló + Canning</div>
+          </div>
+          <div style="background:rgba(208,74,58,0.08);border:1px solid rgba(208,74,58,0.15);border-radius:6px;padding:12px;">
+            <div style="font-size:0.65rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Pendientes aprobación</div>
+            <div style="font-size:1.4rem;font-family:'Cormorant Garamond',serif;font-weight:600;color:var(--accent-red)">$840k</div>
+            <div style="font-size:0.72rem;color:var(--text-dim);margin-top:2px">4 órdenes</div>
+          </div>
+          <div style="background:var(--surface2);border-radius:6px;padding:12px;">
+            <div style="font-size:0.65rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Proyección 30d</div>
+            <div style="font-size:1.4rem;font-family:'Cormorant Garamond',serif;font-weight:600;color:var(--accent-teal)">$3.6M</div>
+            <div style="font-size:0.72rem;color:var(--text-dim);margin-top:2px">Estimado</div>
+          </div>
+          <div style="background:var(--surface2);border-radius:6px;padding:12px;">
+            <div style="font-size:0.65rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Pagos este mes</div>
+            <div style="font-size:1.4rem;font-family:'Cormorant Garamond',serif;font-weight:600;color:var(--text)">$2.9M</div>
+            <div style="font-size:0.72rem;color:var(--text-dim);margin-top:2px">18 operaciones</div>
+          </div>
+        </div>
+        <div style="font-size:0.68rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">Últimas órdenes de pago</div>
+        <div style="overflow-x:auto;">
+          <table class="mini-table">
+            <thead><tr><th>Concepto</th><th>Monto</th><th>Solicitó</th><th>Estado</th></tr></thead>
+            <tbody>
+              <tr><td style="color:var(--text)">La Cuadrada - carnes</td><td>$280k</td><td>Compras</td><td><span class="badge badge-pending">Pend. aprobación</span></td></tr>
+              <tr><td style="color:var(--text)">Alquiler Cariló</td><td>$240k</td><td>Admin</td><td><span class="badge badge-ok">Aprobado</span></td></tr>
+              <tr><td style="color:var(--text)">FEMSA - bebidas</td><td>$190k</td><td>Compras</td><td><span class="badge badge-pending">Pend. aprobación</span></td></tr>
+              <tr><td style="color:var(--text)">Nómina quincenal</td><td>$1.1M</td><td>RRHH</td><td><span class="badge badge-ok">Ejecutado</span></td></tr>
+              <tr><td style="color:var(--text)">Mantenimiento A/C</td><td>$130k</td><td>Operaciones</td><td><span class="badge badge-danger">Rechazado</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div style="margin-top:12px;background:rgba(42,173,160,0.06);border:1px solid rgba(42,173,160,0.15);border-radius:6px;padding:12px;">
+          <div style="font-size:0.7rem;color:var(--accent-teal);font-weight:600;margin-bottom:4px;">Flujo aprobado</div>
+          <div style="font-size:0.72rem;color:var(--text-muted);">Genera OP → Aprobación gerencia → Ejecución → Conciliación bancaria</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- KPI DASHBOARD -->
+<section id="kpis" class="full">
+  <div class="section-inner">
+    <div class="section-tag">Dashboard</div>
+    <h2 class="section-title">KPIs que<br><strong>importan</strong></h2>
+    <p class="section-desc">Todos los indicadores clave en una vista unificada. Alertas configurables para que nunca sorprenda un número fuera de rango.</p>
+
+    <div class="kpi-dashboard">
+      <div class="dash-header">
+        <div class="dash-dot"></div>
+        <h3>Dashboard Ejecutivo — Griller Consolidado</h3>
+        <span style="margin-left:auto;font-size:0.72rem;color:var(--text-dim)">Abril 2025 · Cariló + Canning</span>
+      </div>
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-label">Facturación mensual</div>
+          <div class="kpi-value">$8.7M</div>
+          <div class="kpi-delta delta-up">↑ 18% vs marzo</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">CMV consolidado</div>
+          <div class="kpi-value">28.4%</div>
+          <div class="kpi-delta delta-up">↓ Mejoró 2.1pp</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Margen bruto</div>
+          <div class="kpi-value">71.6%</div>
+          <div class="kpi-delta delta-up">↑ Target: 70%</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Ticket promedio</div>
+          <div class="kpi-value">$24.8k</div>
+          <div class="kpi-delta delta-up">↑ $2.1k vs anterior</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Saldo tesorería</div>
+          <div class="kpi-value">$4.2M</div>
+          <div class="kpi-delta delta-up">Posición neta OK</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Cubiertas / día</div>
+          <div class="kpi-value">187</div>
+          <div class="kpi-delta delta-up">↑ +23 vs anterior</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Costo laboral %</div>
+          <div class="kpi-value">24.1%</div>
+          <div class="kpi-delta delta-down">↑ +1.2pp</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Gastos operativos</div>
+          <div class="kpi-value">$1.9M</div>
+          <div class="kpi-delta delta-down">↑ +8% vs anterior</div>
+        </div>
+      </div>
+      <div class="charts-row">
+        <div class="chart-box">
+          <h4>Evolución de facturación mensual — Cariló vs Canning</h4>
+          <div style="position:relative;height:220px;">
+            <canvas id="facturacionChart" role="img" aria-label="Evolución de facturación mensual Cariló vs Canning 6 meses">Facturación mensual comparada.</canvas>
+          </div>
+        </div>
+        <div class="chart-box">
+          <h4>Mix de ventas por categoría</h4>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+            <span style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text-muted)"><span style="width:8px;height:8px;border-radius:2px;background:#E07B2A;display:inline-block;"></span>Carnes 45%</span>
+            <span style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text-muted)"><span style="width:8px;height:8px;border-radius:2px;background:#2AADA0;display:inline-block;"></span>Bebidas 24%</span>
+            <span style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text-muted)"><span style="width:8px;height:8px;border-radius:2px;background:#5AAF6A;display:inline-block;"></span>Mariscos 16%</span>
+            <span style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text-muted)"><span style="width:8px;height:8px;border-radius:2px;background:#A05520;display:inline-block;"></span>Otros 15%</span>
+          </div>
+          <div style="position:relative;height:180px;">
+            <canvas id="mixChart" role="img" aria-label="Mix de ventas por categoría">Mix de ventas.</canvas>
+          </div>
+        </div>
+      </div>
+      <div class="charts-row" style="margin-top:1px;">
+        <div class="chart-box">
+          <h4>CMV mensual vs target (30%)</h4>
+          <div style="position:relative;height:180px;">
+            <canvas id="cmvChart" role="img" aria-label="CMV mensual vs target 30%">CMV vs target.</canvas>
+          </div>
+        </div>
+        <div class="chart-box">
+          <h4>KPIs de rentabilidad</h4>
+          <div style="display:flex;flex-direction:column;gap:12px;padding-top:8px;">
+            <div>
+              <div style="display:flex;justify-content:space-between;font-size:0.75rem;margin-bottom:4px;"><span style="color:var(--text-muted)">Margen bruto</span><span style="color:var(--text);font-weight:500">71.6%</span></div>
+              <div style="height:4px;background:var(--surface3);border-radius:2px;overflow:hidden;"><div style="height:100%;width:71.6%;background:var(--accent-green);border-radius:2px;"></div></div>
+            </div>
+            <div>
+              <div style="display:flex;justify-content:space-between;font-size:0.75rem;margin-bottom:4px;"><span style="color:var(--text-muted)">Ocupación</span><span style="color:var(--text);font-weight:500">78%</span></div>
+              <div style="height:4px;background:var(--surface3);border-radius:2px;overflow:hidden;"><div style="height:100%;width:78%;background:var(--fire);border-radius:2px;"></div></div>
+            </div>
+            <div>
+              <div style="display:flex;justify-content:space-between;font-size:0.75rem;margin-bottom:4px;"><span style="color:var(--text-muted)">Costo laboral</span><span style="color:var(--text);font-weight:500">24.1%</span></div>
+              <div style="height:4px;background:var(--surface3);border-radius:2px;overflow:hidden;"><div style="height:100%;width:24.1%;background:var(--accent-red);border-radius:2px;"></div></div>
+            </div>
+            <div>
+              <div style="display:flex;justify-content:space-between;font-size:0.75rem;margin-bottom:4px;"><span style="color:var(--text-muted)">CMV vs Target</span><span style="color:var(--text);font-weight:500">28.4% / 30%</span></div>
+              <div style="height:4px;background:var(--surface3);border-radius:2px;overflow:hidden;"><div style="height:100%;width:94.7%;background:var(--accent-teal);border-radius:2px;"></div></div>
+            </div>
+            <div>
+              <div style="display:flex;justify-content:space-between;font-size:0.75rem;margin-bottom:4px;"><span style="color:var(--text-muted)">OPs pendientes aprobación</span><span style="color:var(--accent-red);font-weight:500">4</span></div>
+              <div style="height:4px;background:var(--surface3);border-radius:2px;overflow:hidden;"><div style="height:100%;width:40%;background:var(--accent-red);border-radius:2px;"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- INTEGRACIONES -->
+<section id="integraciones">
+  <div class="section-tag">Ecosistema</div>
+  <h2 class="section-title">Integrado con las<br><strong>herramientas que ya usás</strong></h2>
+  <p class="section-desc">GrillerOS no reemplaza tus sistemas — los conecta. Datos que fluyen solos, sin doble carga ni errores de traspaso.</p>
+  <div class="int-grid">
+    <div class="int-card">
+      <div class="int-logo">💳</div>
+      <h4>Clover</h4>
+      <p>Sincronización automática de transacciones, ventas por turno y métodos de pago.</p>
+    </div>
+    <div class="int-card">
+      <div class="int-logo">🧾</div>
+      <h4>AFIP / Facturación</h4>
+      <p>Integración con servicios de facturación electrónica. Emisión y registro automático.</p>
+    </div>
+    <div class="int-card">
+      <div class="int-logo">🏦</div>
+      <h4>Bancos</h4>
+      <p>Carga de extractos bancarios para conciliación automática en el módulo de tesorería.</p>
+    </div>
+    <div class="int-card">
+      <div class="int-logo">📱</div>
+      <h4>WhatsApp / Email</h4>
+      <p>Alertas y reportes diarios. Notificaciones de OPs pendientes de aprobación.</p>
+    </div>
+  </div>
+</section>
+
+<!-- GASTOS -->
+<section id="gastos">
+  <div class="section-tag">Módulo 03</div>
+  <h2 class="section-title">Control de<br><strong>Gastos</strong></h2>
+  <div class="two-col">
+    <div>
+      <div class="detail-features">
+        <div class="feature-row">
+          <div class="feature-icon">🗂️</div>
+          <div>
+            <h4>Categorización de gastos</h4>
+            <p>Servicios, alquileres, mantenimiento, marketing, logística. Cada gasto en su lugar.</p>
+          </div>
+        </div>
+        <div class="feature-row">
+          <div class="feature-icon">📊</div>
+          <div>
+            <h4>Evolución mensual</h4>
+            <p>Gráficos que muestran cómo evolucionan los gastos y qué categorías están creciendo.</p>
+          </div>
+        </div>
+        <div class="feature-row">
+          <div class="feature-icon">🏢</div>
+          <div>
+            <h4>Comparativa multi-sucursal</h4>
+            <p>¿Cuánto gasta Cariló vs Canning en cada categoría? Benchmarks automáticos.</p>
+          </div>
+        </div>
+        <div class="feature-row">
+          <div class="feature-icon">🎯</div>
+          <div>
+            <h4>Presupuesto y desvíos</h4>
+            <p>Establecé un presupuesto mensual por categoría y recibí alertas cuando lo estés superando.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="mock-panel">
+      <div class="panel-header">
+        <div class="dot-red"></div><div class="dot-amber"></div><div class="dot-green"></div>
+        <span>Gastos — Abril 2025</span>
+      </div>
+      <div style="padding:16px;">
+        <div style="position:relative;height:200px;margin-bottom:16px;">
+          <canvas id="gastosChart" role="img" aria-label="Evolución de gastos mensuales por categoría">Gastos mensuales apilados.</canvas>
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="mini-table">
+            <thead><tr><th>Categoría</th><th>Este mes</th><th>Presupuesto</th><th>Estado</th></tr></thead>
+            <tbody>
+              <tr><td style="color:var(--text)">RRHH / Nómina</td><td>$2.1M</td><td>$2.2M</td><td><span class="badge badge-ok">OK</span></td></tr>
+              <tr><td style="color:var(--text)">Alquileres</td><td>$480k</td><td>$480k</td><td><span class="badge badge-ok">OK</span></td></tr>
+              <tr><td style="color:var(--text)">Servicios</td><td>$280k</td><td>$250k</td><td><span class="badge badge-warn">+12%</span></td></tr>
+              <tr><td style="color:var(--text)">Mantenimiento</td><td>$340k</td><td>$200k</td><td><span class="badge badge-danger">+70%</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ROADMAP -->
+<section id="roadmap">
+  <div class="section-tag">Implementación</div>
+  <h2 class="section-title">En el aire en<br><strong>3 meses</strong></h2>
+  <p class="section-desc">Implementación progresiva para no interrumpir la operación. Cada fase entrega valor desde el día uno.</p>
+  <div class="roadmap">
+    <div class="phase">
+      <div class="phase-dot"></div>
+      <div class="phase-label">Mes 1</div>
+      <h4>Fundación</h4>
+      <ul>
+        <li>Proveedores y compras</li>
+        <li>Integración Clover</li>
+        <li>Módulo de Gastos</li>
+        <li>Multi-sucursal setup</li>
+      </ul>
+    </div>
+    <div class="phase">
+      <div class="phase-dot"></div>
+      <div class="phase-label">Mes 2</div>
+      <h4>Rentabilidad & Caja</h4>
+      <ul>
+        <li>CMV automático</li>
+        <li>KPIs financieros</li>
+        <li>Tesorería + aprobaciones</li>
+        <li>Proyección de caja</li>
+      </ul>
+    </div>
+    <div class="phase">
+      <div class="phase-dot dim"></div>
+      <div class="phase-label dim">Mes 3</div>
+      <h4>Operaciones completas</h4>
+      <ul>
+        <li>Stock e inventario</li>
+        <li>Recetas costeadas</li>
+        <li>Módulo RRHH</li>
+        <li>Eventos & privados</li>
+      </ul>
+    </div>
+    <div class="phase">
+      <div class="phase-dot dim"></div>
+      <div class="phase-label dim">Post mes 3</div>
+      <h4>Expansión</h4>
+      <ul>
+        <li>Dashboard ejecutivo BI</li>
+        <li>App móvil</li>
+        <li>Alertas avanzadas</li>
+        <li>Conciliación bancaria</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- CIERRE -->
+<section id="cierre" style="background:var(--surface);">
+  <div class="cierre-inner">
+    <div style="font-size:0.7rem;letter-spacing:.2em;text-transform:uppercase;color:var(--fire);margin-bottom:2rem;">Propuesta GrillerOS</div>
+    <h2>Inspired by Fire.<br><strong>Powered by Data.</strong></h2>
+    <p>Construimos una plataforma a medida para Griller. No un producto genérico — una herramienta pensada para la velocidad, el volumen y la ambición de dos restaurantes premium.</p>
+  </div>
+</section>
+
+<script>
+const chartDefaults = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: { legend: { display: false } },
+};
+const gridColor = 'rgba(255,255,255,0.05)';
+const textColor = 'rgba(138,128,112,0.8)';
+
+new Chart(document.getElementById('facturacionChart'), {
+  type: 'line',
+  data: {
+    labels: ['Nov','Dic','Ene','Feb','Mar','Abr'],
+    datasets: [
+      { label: 'Cariló', data: [3.1,5.8,4.2,3.6,3.9,4.8], borderColor:'#E07B2A', backgroundColor:'rgba(224,123,42,0.08)', fill:true, tension:0.4, pointRadius:3, pointBackgroundColor:'#E07B2A', borderWidth:2 },
+      { label: 'Canning', data: [2.4,3.1,3.3,3.0,3.4,3.9], borderColor:'#2AADA0', backgroundColor:'rgba(42,173,160,0.06)', fill:true, tension:0.4, pointRadius:3, pointBackgroundColor:'#2AADA0', borderWidth:2, borderDash:[4,3] }
+    ]
+  },
+  options: { ...chartDefaults, scales: { x:{ grid:{color:gridColor}, ticks:{color:textColor,font:{size:11}} }, y:{ grid:{color:gridColor}, ticks:{color:textColor,font:{size:11},callback:v=>'$'+v+'M'} } } }
+});
+
+new Chart(document.getElementById('mixChart'), {
+  type: 'doughnut',
+  data: { labels:['Carnes','Bebidas','Mariscos','Otros'], datasets:[{ data:[45,24,16,15], backgroundColor:['#E07B2A','#2AADA0','#5AAF6A','#A05520'], borderWidth:0, hoverOffset:4 }] },
+  options: { ...chartDefaults, cutout:'65%' }
+});
+
+new Chart(document.getElementById('cmvChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Nov','Dic','Ene','Feb','Mar','Abr'],
+    datasets: [
+      { label:'CMV %', data:[31.2,33.4,32.1,30.8,30.5,28.4], backgroundColor:(ctx)=>ctx.parsed.y>30?'rgba(208,74,58,0.5)':'rgba(90,175,106,0.5)', borderColor:(ctx)=>ctx.parsed.y>30?'#D04A3A':'#5AAF6A', borderWidth:1 },
+      { label:'Target', data:[30,30,30,30,30,30], type:'line', borderColor:'rgba(224,123,42,0.5)', borderDash:[5,3], pointRadius:0, borderWidth:1.5, fill:false }
+    ]
+  },
+  options: { ...chartDefaults, scales: { x:{grid:{color:gridColor},ticks:{color:textColor,font:{size:11}}}, y:{grid:{color:gridColor},ticks:{color:textColor,font:{size:11},callback:v=>v+'%'},min:24,max:36} } }
+});
+
+new Chart(document.getElementById('gastosChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Nov','Dic','Ene','Feb','Mar','Abr'],
+    datasets: [
+      { label:'RRHH', data:[1.8,2.0,1.9,2.0,2.1,2.1], backgroundColor:'rgba(224,123,42,0.6)', borderWidth:0 },
+      { label:'Alquileres', data:[0.48,0.48,0.48,0.48,0.48,0.48], backgroundColor:'rgba(42,173,160,0.5)', borderWidth:0 },
+      { label:'Otros', data:[0.6,0.8,0.7,0.75,0.72,0.81], backgroundColor:'rgba(90,175,106,0.4)', borderWidth:0 }
+    ]
+  },
+  options: { ...chartDefaults, scales: { x:{stacked:true,grid:{color:gridColor},ticks:{color:textColor,font:{size:11}}}, y:{stacked:true,grid:{color:gridColor},ticks:{color:textColor,font:{size:11},callback:v=>'$'+v+'M'}} } }
+});
+</script>
+</body>
+</html>
